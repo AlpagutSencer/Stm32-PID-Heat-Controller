@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "math.h": "c",
+        "cstdio": "c",
+        "printf.h": "c",
+        "stdint.h": "c",
+        "stdio.h": "c",
+        "stm32f10x.h": "c",
+        "stdlib.h": "c",
+        "stdarg.h": "c",
+        "xprintf.h": "c"
+    }
+}
