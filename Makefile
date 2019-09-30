@@ -32,7 +32,7 @@ SOURCES += twilcd.c
 SOURCES += delay.c
 SOURCES += interface.c
 SOURCES += usart.c
-SOURCES += xprintf.c
+SOURCES += syscalls.c
 #SOURCES += touch.c
 SOURCES += $(STD_PERIPH_LIBS)/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/startup/TrueSTUDIO/startup_stm32f10x_md.s
 #SOURCES += $(RTOS_LIBS)/Source/croutine.c
@@ -61,11 +61,11 @@ SIZE = arm-none-eabi-size
 ST_FLASH ?= st-flash
 
 # specify compiler flags
-CFLAGS  = -g -O3 -Wall -Wno-unused-variable -std=c11 -ffunction-sections -std=c99
+CFLAGS  = -O2 -g -Wall -Wno-unused-variable
 CFLAGS += -T$(STD_PERIPH_LIBS)/Project/STM32F10x_StdPeriph_Template/TrueSTUDIO/STM3210B-EVAL/stm32_flash.ld
-CFLAGS += -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork -specs=nosys.specs  -lc -lrdimon  -specs=nano.specs  -mhard-float -lm -lnosys
-CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fno-exceptions
-CFLAGS += -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -D__CORTEX_M3 -D__FPU_PRESENT=1 -DWORDS_STACK_SIZE=200
+CFLAGS += -mlittle-endian -mthumb -mcpu=cortex-m3 -mthumb-interwork --specs=rdimon.specs  -specs=nano.specs   
+CFLAGS += -mfloat-abi=soft  -lgcc -lc -lm 
+CFLAGS += -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER 
 CFLAGS += -Wl,-Map=heat.map,--gc-sections
 CFLAGS += -I.
 CFLAGS += -I$(STD_PERIPH_LIBS)/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/
