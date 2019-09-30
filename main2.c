@@ -16,6 +16,8 @@
 
 
 
+
+
 #define SLAVE_ADDRESS_LCD 0x4E
 #define SYSCLK 72000000
 #define PRESCALER 72
@@ -25,11 +27,14 @@
 
 
 int avgSum = 0;
-char buffer[16];
-char buffer2[16];
+char buffer[20];
+char buffer2[20];
 int TIM_Pulse;
-double temp=0; 
 double averaged;
+
+volatile double R;
+double T;
+double ty = 2.71;
 
  
 
@@ -137,15 +142,47 @@ int main(void) {
 
     averaged = avgSum/SAMPLE;
    // temp = getTemp(averaged);
-   
-    double R = ((10230000/averaged) - 10000);
-   	temp = log(1056);
+    
+    
+    R = (100000 / ((4096/averaged)-1));
 
-    _delay_ms(100);
+    USART_SendString(USART1,"DEBUG: conversion started \n\r");
+
     
-    sprintf(buffer,"%d.%ld",(int)temp, (uint32_t)((temp - (int)temp) *100000.0));
+    
+    double celcius = R/100000;
+    USART_SendString(USART1,"1 \n\r");
+    celcius = log(R);
+    USART_SendString(USART1,"2 \n\r");
+    celcius /= 3950; // 1/B * ln(R/Ro)
+    USART_SendString(USART1,"3 \n\r");
+    celcius += 1.0 / (25 + 273.15); // + (1/To)
+    USART_SendString(USART1,"4 \n\r");
+    celcius = 1.0 / celcius; // Invert
+    USART_SendString(USART1,"5 \n\r");
+    celcius -= 273.15; // convert to C
+    
+   USART_SendString(USART1,"DEBUG: conversion ended \n\r");
+
+
+    
+    double T =log(ty);
+   
+    sprintf(buffer,"%d.%ld \r\n",(int)T, (uint32_t)((T - (int)T) *1000000.0));
+  
+   
+
+
+
+
+
+
+  
+
+   USART_SendString(USART1,buffer);
+    
     sprintf(buffer2, "adc: %d",avgSum/SAMPLE);
-    
+    avgSum =0;
     setpos(0,0);
     str_lcd(buffer);
     setpos(0,1);
@@ -155,24 +192,24 @@ int main(void) {
     
     
 
-    avgSum=0;
+   
 
    
 
  
 
-    TIM2->CCR4=19000;
+    //TIM2->CCR4=19000;
 
 
   
+ USART_SendString(USART1,"DEBUG: end of main \n\r");
+ 
+_delay_ms(250);
 
-    
-
-
- /*GPIO_SetBits(GPIOB, GPIO_Pin_14);    // turn the LED on
-_delay_ms(1000);
+ GPIO_SetBits(GPIOB, GPIO_Pin_14);    // turn the LED on
+_delay_ms(250);
 GPIO_ResetBits(GPIOB, GPIO_Pin_14);  // turn the LED off
-_delay_ms(1000); */
+_delay_ms(250); 
     }
 }
 
@@ -215,19 +252,3 @@ TouchScreenErrorCodes adc_init(void)
 }
 
 
-double getTemp(uint32_t val)
-{
-    double R;
-    double Thermistor;
-		// store adc value on val register 
-	R=((10230000/val) - 10000);// calculate the resistance 
-	Thermistor = log(R);	// calculate natural log of resistance 
-	
-	// Steinhart-Hart Thermistor Equation: 
-	  //Temperature in Kelvin = 1 / (A + B[ln(R)] + C[ln(R)]^3)		
-	  //where A = 0.001129148, B = 0.000234125 and C = 8.76741*10^-8  */
-	
-	Thermistor = 1 / (0.001129148 + (0.000234125 * Thermistor) + (0.0000000876741 * Thermistor * Thermistor * Thermistor));
-	Thermistor = Thermistor - 273.15;
-	return Thermistor;
-}

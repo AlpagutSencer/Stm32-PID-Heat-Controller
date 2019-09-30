@@ -177,6 +177,8 @@ void USART_SendString(USART_TypeDef* USARTx, char* s)
     }
  }
 
+ 
+
 
 /*void USART_SendInt(USART_TypeDef* USARTx, uint8_t *s)
  {
