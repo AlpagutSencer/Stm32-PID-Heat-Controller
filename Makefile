@@ -65,7 +65,7 @@ CFLAGS  = -O2 -g -Wall -Wno-unused-variable
 CFLAGS += -T$(STD_PERIPH_LIBS)/Project/STM32F10x_StdPeriph_Template/TrueSTUDIO/STM3210B-EVAL/stm32_flash.ld
 CFLAGS += -mlittle-endian -mthumb -mcpu=cortex-m3 -mthumb-interwork --specs=rdimon.specs  -specs=nano.specs   
 CFLAGS += -mfloat-abi=soft  -lgcc -lc -lm 
-CFLAGS += -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER 
+CFLAGS += -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -MD
 CFLAGS += -Wl,-Map=heat.map,--gc-sections
 CFLAGS += -I.
 CFLAGS += -I$(STD_PERIPH_LIBS)/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/

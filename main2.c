@@ -18,10 +18,11 @@
 
 
 
+
 #define SLAVE_ADDRESS_LCD 0x4E
 #define SYSCLK 72000000
 #define PRESCALER 72
-#define SAMPLE 5
+#define SAMPLE 50
 #define PWM_PERIOD 50
 
 
@@ -33,8 +34,8 @@ int TIM_Pulse;
 double averaged;
 
 volatile double R;
-double T;
-double ty = 2.71;
+volatile double celcius ;
+
 
  
 
@@ -150,25 +151,22 @@ int main(void) {
 
     
     
-    double celcius = R/100000;
-    USART_SendString(USART1,"1 \n\r");
-    celcius = log(R);
-    USART_SendString(USART1,"2 \n\r");
+    celcius = R/100000;
+    celcius = log(celcius);
     celcius /= 3950; // 1/B * ln(R/Ro)
-    USART_SendString(USART1,"3 \n\r");
     celcius += 1.0 / (25 + 273.15); // + (1/To)
-    USART_SendString(USART1,"4 \n\r");
     celcius = 1.0 / celcius; // Invert
-    USART_SendString(USART1,"5 \n\r");
     celcius -= 273.15; // convert to C
     
    USART_SendString(USART1,"DEBUG: conversion ended \n\r");
 
 
     
-    double T =log(ty);
+    
+
+    
    
-    sprintf(buffer,"%d.%ld \r\n",(int)T, (uint32_t)((T - (int)T) *1000000.0));
+    sprintf(buffer,"%d.%ld \r\n",(int)celcius, (uint32_t)((celcius - (int)celcius) *1000000.0));
   
    
 
@@ -204,12 +202,12 @@ int main(void) {
   
  USART_SendString(USART1,"DEBUG: end of main \n\r");
  
-_delay_ms(250);
 
- GPIO_SetBits(GPIOB, GPIO_Pin_14);    // turn the LED on
+
+ /*GPIO_SetBits(GPIOB, GPIO_Pin_14);    // turn the LED on
 _delay_ms(250);
 GPIO_ResetBits(GPIOB, GPIO_Pin_14);  // turn the LED off
-_delay_ms(250); 
+_delay_ms(250); */
     }
 }
 
