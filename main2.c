@@ -50,6 +50,8 @@ typedef enum
 
 TouchScreenErrorCodes adc_init(void);
 double getTemp(uint32_t val);
+int tim_init(void);
+void TIM4_IRQHandler(void);
 
 
 
@@ -64,6 +66,8 @@ int main(void) {
     clearlcd();
     USART_init();
     adc_init();
+    tim_init();
+
   
     
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -142,14 +146,12 @@ int main(void) {
    }
 
     averaged = avgSum/SAMPLE;
-   // temp = getTemp(averaged);
+   
     
     
     R = (100000 / ((4096/averaged)-1));
 
-    USART_SendString(USART1,"DEBUG: conversion started \n\r");
 
-    
     
     celcius = R/100000;
     celcius = log(celcius);
@@ -158,7 +160,7 @@ int main(void) {
     celcius = 1.0 / celcius; // Invert
     celcius -= 273.15; // convert to C
     
-   USART_SendString(USART1,"DEBUG: conversion ended \n\r");
+   
 
 
     
@@ -169,13 +171,6 @@ int main(void) {
     sprintf(buffer,"%d.%ld \r\n",(int)celcius, (uint32_t)((celcius - (int)celcius) *1000000.0));
   
    
-
-
-
-
-
-
-  
 
    USART_SendString(USART1,buffer);
     
@@ -200,7 +195,7 @@ int main(void) {
 
 
   
- USART_SendString(USART1,"DEBUG: end of main \n\r");
+ 
  
 
 
@@ -216,10 +211,10 @@ TouchScreenErrorCodes adc_init(void)
 {
 	
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-     GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_StructInit(&GPIO_InitStructure);
-    ADC_InitTypeDef ADC_InitStructure;
-    RCC->APB2ENR |= 0x00000004; //RCC_APB2ENR_IOPAEN;
+  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_StructInit(&GPIO_InitStructure);
+  ADC_InitTypeDef ADC_InitStructure;
+  RCC->APB2ENR |= 0x00000004; //RCC_APB2ENR_IOPAEN;
    
 
      /*GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 ;
@@ -249,4 +244,36 @@ TouchScreenErrorCodes adc_init(void)
   return TOUCH_ERR_NONE;
 }
 
+int tim_init(void)
+{
 
+  TIM_TimeBaseInitTypeDef TIMER_InitStructure;
+  NVIC_InitTypeDef NVIC_InitStructure;
+
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE); 
+
+  TIM_TimeBaseStructInit(&TIMER_InitStructure);
+  TIMER_InitStructure.TIM_CounterMode = TIM_CounterMode_Up; 
+  TIMER_InitStructure.TIM_Prescaler = 8000; 
+   
+  TIMER_InitStructure.TIM_Period = 1000; 
+  TIM_TimeBaseInit(TIM4, &TIMER_InitStructure);
+  TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE); 
+  TIM_Cmd(TIM4, ENABLE);
+  
+  NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+
+}
+
+void TIM4_IRQHandler(void)
+{
+  if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
+        
+    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+		GPIOB->ODR ^= GPIO_Pin_14;
+   }
+}
