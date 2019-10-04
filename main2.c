@@ -13,28 +13,21 @@
 #include "stdlib.h"
 
 
-
-
-
-
-
-
 #define SLAVE_ADDRESS_LCD 0x4E
 #define SYSCLK 72000000
 #define PRESCALER 72
-#define SAMPLE 50
 #define PWM_PERIOD 50
 
 
 
-int avgSum = 0;
+
 char buffer[20];
 char buffer2[20];
 int TIM_Pulse;
-double averaged;
+double rem;
 
-volatile double R;
-volatile double celcius ;
+
+
 
 
  
@@ -49,8 +42,8 @@ typedef enum
 
 
 TouchScreenErrorCodes adc_init(void);
-double getTemp(uint32_t val);
-int tim_init(void);
+double getTemp(void);
+void tim_init(void);
 void TIM4_IRQHandler(void);
 
 
@@ -129,68 +122,24 @@ int main(void) {
     ADC1->SQR1 = 0x00000000;
     ADC1->SQR3 = (1<<0);
     _delay_ms(10);
-    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+    
+    
 
-
-  
-    while ((ADC1->SR & ADC_SR_EOC) == 0){
-
-    }
-	
-	ADC_SoftwareStartConvCmd(ADC1, DISABLE);
-	
-   for(int i=0; i<SAMPLE; i++){
-     
-	 avgSum += ADC1->DR ;
-
-   }
-
-    averaged = avgSum/SAMPLE;
+    rem = getTemp();
    
-    
-    
-    R = (100000 / ((4096/averaged)-1));
-
-
-    
-    celcius = R/100000;
-    celcius = log(celcius);
-    celcius /= 3950; // 1/B * ln(R/Ro)
-    celcius += 1.0 / (25 + 273.15); // + (1/To)
-    celcius = 1.0 / celcius; // Invert
-    celcius -= 273.15; // convert to C
-    
-   
-
-
-    
-    
-
-    
-   
-    sprintf(buffer,"%d.%ld \r\n",(int)celcius, (uint32_t)((celcius - (int)celcius) *1000000.0));
+    sprintf(buffer,"%d.%ld \r\n",(int)rem, (uint32_t)((rem - (int)rem) *1000000.0));
   
    
 
    USART_SendString(USART1,buffer);
     
-    sprintf(buffer2, "adc: %d",avgSum/SAMPLE);
-    avgSum =0;
+    
     setpos(0,0);
     str_lcd(buffer);
     setpos(0,1);
     str_lcd(buffer2);
-   // USART_SendString(USART1,buffer);
-    
-    
-    
-
    
-
-   
-
- 
-
+    
     //TIM2->CCR4=19000;
 
 
@@ -244,7 +193,7 @@ TouchScreenErrorCodes adc_init(void)
   return TOUCH_ERR_NONE;
 }
 
-int tim_init(void)
+void tim_init(void)
 {
 
   TIM_TimeBaseInitTypeDef TIMER_InitStructure;
@@ -254,9 +203,9 @@ int tim_init(void)
 
   TIM_TimeBaseStructInit(&TIMER_InitStructure);
   TIMER_InitStructure.TIM_CounterMode = TIM_CounterMode_Up; 
-  TIMER_InitStructure.TIM_Prescaler = 8000; 
+  TIMER_InitStructure.TIM_Prescaler = 1; 
    
-  TIMER_InitStructure.TIM_Period = 1000; 
+  TIMER_InitStructure.TIM_Period = 35999; 
   TIM_TimeBaseInit(TIM4, &TIMER_InitStructure);
   TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE); 
   TIM_Cmd(TIM4, ENABLE);
@@ -270,10 +219,88 @@ int tim_init(void)
 }
 
 void TIM4_IRQHandler(void)
+
 {
-  if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
+
+if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){ 
+  TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+ 
+unsigned long lastTime;
+double Input, Output, Setpoint;
+double errorSum , lastErr, ITerm;
+double outMin=0;
+double outMax=20000;
+double kp=10;
+double ki=1.0;
+double kd=0;
+Setpoint=45;
+
+
+
+Input = getTemp();
+
+double error = Setpoint - Input;
+//errorSum+=error; //error accumulator
+
+ITerm = ki* errorSum;
+
+if(ITerm>outMax){ITerm=outMax;}
+if(ITerm<outMin){ITerm=outMin;}
+
+if(Output>outMax){Output=outMax;}
+if(Output<outMin){Output=outMin;}
+
+Output = kp*error + ITerm;
+lastErr = error;
+
+TIM2->CCR4=Output;
+
+
+
+
+}
+
+  /*if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
         
     TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
 		GPIOB->ODR ^= GPIO_Pin_14;
-   }
+   }*/
+}
+
+double getTemp(void)
+{
+
+ double averaged;
+ int avgSum = 0;
+ volatile double R;
+ volatile double celcius ;
+ int SAMPLE = 50;
+
+ ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+
+ while ((ADC1->SR & ADC_SR_EOC) == 0){
+ }
+	
+ ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+	
+ for(int i=0; i<SAMPLE; i++){
+     
+  avgSum += ADC1->DR ;}
+
+ averaged = avgSum/SAMPLE;
+   
+    
+ R = (100000 / ((4096/averaged)-1));
+
+
+    
+ celcius = R/100000;
+ celcius = log(celcius);
+ celcius /= 3950; // 1/B * ln(R/Ro)
+ celcius += 1.0 / (25 + 273.15); // + (1/To)
+ celcius = 1.0 / celcius; // Invert
+ celcius -= 273.15; // convert to C
+
+
+  return celcius;
 }
