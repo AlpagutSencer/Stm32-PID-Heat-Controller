@@ -16,7 +16,7 @@
 #define SLAVE_ADDRESS_LCD 0x4E
 #define SYSCLK 72000000
 #define PRESCALER 72
-#define PWM_PERIOD 50
+#define PWM_FREQ 1000
 
 
 
@@ -90,8 +90,8 @@ int main(void) {
     GPIO_Init(GPIOA, &GPIO_InitStructure) ;
 
     TIM_TimeBaseStructInit(&timer);
-    timer.TIM_Prescaler = PRESCALER;
-    timer.TIM_Period = SYSCLK / PRESCALER / PWM_PERIOD;
+    timer.TIM_Prescaler = 71;
+    timer.TIM_Period = 999;
     timer.TIM_ClockDivision = 0;
     timer.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &timer);
@@ -229,11 +229,11 @@ unsigned long lastTime;
 double Input, Output, Setpoint;
 double errorSum , lastErr, ITerm;
 double outMin=0;
-double outMax=20000;
-double kp=10;
-double ki=1.0;
+double outMax=1000;
+double kp=3.5;
+double ki=3.5;
 double kd=0;
-Setpoint=45;
+Setpoint=30;
 
 
 
@@ -242,16 +242,23 @@ Input = getTemp();
 double error = Setpoint - Input;
 //errorSum+=error; //error accumulator
 
-ITerm = ki* errorSum;
+if((error>-10)&&(error<10))
+{
+  ITerm = ITerm + (ki * error);
+}
 
-if(ITerm>outMax){ITerm=outMax;}
-if(ITerm<outMin){ITerm=outMin;}
+/*sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
+ USART_SendString(USART1,buffer2);*/
+
+
+//if(ITerm>outMax){ITerm=outMax;}
+//if(ITerm<outMin){ITerm=outMin;}
 
 if(Output>outMax){Output=outMax;}
 if(Output<outMin){Output=outMin;}
 
-Output = kp*error + ITerm;
-lastErr = error;
+Output = kp*error+ITerm;
+
 
 TIM2->CCR4=Output;
 
