@@ -26,7 +26,18 @@ char buffer2[20];
 int TIM_Pulse;
 double rem;
 
-
+double Input;
+double Output;
+double Setpoint=40;
+double errorSum;
+double lastErr=0;
+double ITerm=0;
+double DTerm=0;
+double outMin=0;
+double outMax=1000;
+double kp=2.85;
+double ki=0.00017;
+double kd=1.98;
 
 
 
@@ -44,9 +55,57 @@ typedef enum
 TouchScreenErrorCodes adc_init(void);
 double getTemp(void);
 void tim_init(void);
-void TIM4_IRQHandler(void);
 
 
+void TIM4_IRQHandler(void)
+
+{
+
+if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){ 
+  TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+ 
+
+Input = getTemp();
+
+double error = Setpoint - Input;
+//errorSum+=error; //error accumulator
+
+//ITerm += (ki * error);
+
+if((error>-3)&&(error<3))
+{
+  
+  ITerm += (ki * error);
+}
+
+DTerm = kd * ((error-lastErr)/1000);
+
+
+
+
+if(ITerm>outMax){ITerm=outMax;}
+else if(ITerm<outMin){ITerm=outMin;}
+
+if(Output>outMax){Output=outMax;}
+if(Output<outMin){Output=outMin;}
+
+Output = kp*error+ITerm+DTerm;
+
+lastErr = error;
+
+TIM2->CCR4=Output;
+
+
+
+
+}
+
+  /*if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
+        
+    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+		GPIOB->ODR ^= GPIO_Pin_14;
+   }*/
+}
 
 
 
@@ -121,23 +180,22 @@ int main(void) {
 
     ADC1->SQR1 = 0x00000000;
     ADC1->SQR3 = (1<<0);
-    _delay_ms(10);
+    
     
     
 
     rem = getTemp();
    
     sprintf(buffer,"%d.%ld \r\n",(int)rem, (uint32_t)((rem - (int)rem) *1000000.0));
-  
-   
 
-   USART_SendString(USART1,buffer);
+    sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
+ USART_SendString(USART1,buffer2);
+ USART_SendString(USART1,buffer);
     
+    //USART_SendString(USART1,buffer);
+    /*setpos(0,0);
+    str_lcd(buffer);*/
     
-    setpos(0,0);
-    str_lcd(buffer);
-    setpos(0,1);
-    str_lcd(buffer2);
    
     
     //TIM2->CCR4=19000;
@@ -218,67 +276,7 @@ void tim_init(void)
 
 }
 
-void TIM4_IRQHandler(void)
 
-{
-
-if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){ 
-  TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
- 
-unsigned long lastTime;
-double Input, Output, Setpoint;
-double errorSum;
-double lastErr=0;
-double ITerm=0;
-double DTerm=0;
-double outMin=0;
-double outMax=1000;
-double kp=1;
-double ki=5.5;
-double kd=2;
-Setpoint=60;
-
-
-Input = getTemp();
-
-double error = Setpoint - Input;
-//errorSum+=error; //error accumulator
-
-if((error>-10)&&(error<20))
-{
-  
-  ITerm += (ki * error);
-}
-
-DTerm = kd * ((error-lastErr)/1000);
-
-/*sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
- USART_SendString(USART1,buffer2);*/
-
-
-//if(ITerm>outMax){ITerm=outMax;}
-//if(ITerm<outMin){ITerm=outMin;}
-
-if(Output>outMax){Output=outMax;}
-if(Output<outMin){Output=outMin;}
-
-Output = kp*error+ITerm+DTerm;
-
-lastErr = error;
-
-TIM2->CCR4=Output;
-
-
-
-
-}
-
-  /*if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
-        
-    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
-		GPIOB->ODR ^= GPIO_Pin_14;
-   }*/
-}
 
 double getTemp(void)
 {
