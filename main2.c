@@ -227,14 +227,16 @@ if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
  
 unsigned long lastTime;
 double Input, Output, Setpoint;
-double errorSum , lastErr, ITerm;
+double errorSum;
+double lastErr=0;
+double ITerm=0;
+double DTerm=0;
 double outMin=0;
 double outMax=1000;
-double kp=3.5;
-double ki=3.5;
-double kd=0;
-Setpoint=30;
-
+double kp=1;
+double ki=5.5;
+double kd=2;
+Setpoint=60;
 
 
 Input = getTemp();
@@ -242,10 +244,13 @@ Input = getTemp();
 double error = Setpoint - Input;
 //errorSum+=error; //error accumulator
 
-if((error>-10)&&(error<10))
+if((error>-10)&&(error<20))
 {
-  ITerm = ITerm + (ki * error);
+  
+  ITerm += (ki * error);
 }
+
+DTerm = kd * ((error-lastErr)/1000);
 
 /*sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
  USART_SendString(USART1,buffer2);*/
@@ -257,8 +262,9 @@ if((error>-10)&&(error<10))
 if(Output>outMax){Output=outMax;}
 if(Output<outMin){Output=outMin;}
 
-Output = kp*error+ITerm;
+Output = kp*error+ITerm+DTerm;
 
+lastErr = error;
 
 TIM2->CCR4=Output;
 
