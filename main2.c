@@ -28,16 +28,16 @@ double rem;
 
 double Input;
 double Output;
-double Setpoint=40;
+double Setpoint=50;
 double errorSum;
 double lastErr=0;
 double ITerm=0;
 double DTerm=0;
 double outMin=0;
 double outMax=1000;
-double kp=2.85;
-double ki=0.00017;
-double kd=1.98;
+double kp=2.55;
+double ki=0.00010;
+double kd=2.3;
 
 
 
@@ -53,7 +53,7 @@ typedef enum
 
 
 TouchScreenErrorCodes adc_init(void);
-double getTemp(void);
+double getTemp(double alpha);
 void tim_init(void);
 
 
@@ -65,12 +65,15 @@ if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
   TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
  
 
-Input = getTemp();
+Input = getTemp(0.01);
 
 double error = Setpoint - Input;
 //errorSum+=error; //error accumulator
 
 //ITerm += (ki * error);
+
+if(Input<Setpoint){ki=0.0002;}
+if(Input>Setpoint+0.6){ki=0.0020;}
 
 if((error>-3)&&(error<3))
 {
@@ -184,13 +187,13 @@ int main(void) {
     
     
 
-    rem = getTemp();
+    rem = getTemp(0.01);
    
     sprintf(buffer,"%d.%ld \r\n",(int)rem, (uint32_t)((rem - (int)rem) *1000000.0));
 
     sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
- USART_SendString(USART1,buffer2);
- USART_SendString(USART1,buffer);
+    USART_SendString(USART1,buffer2);
+    USART_SendString(USART1,buffer);
     
     //USART_SendString(USART1,buffer);
     /*setpos(0,0);
@@ -278,14 +281,16 @@ void tim_init(void)
 
 
 
-double getTemp(void)
+double getTemp(double alpha)
 {
 
- double averaged;
+ double arithAveraged;
  int avgSum = 0;
  volatile double R;
  volatile double celcius ;
- int SAMPLE = 50;
+ int SAMPLE = 70;
+ double lastExpAveraged=0;
+ double exponentialAveraged=0;
 
  ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 
@@ -298,10 +303,13 @@ double getTemp(void)
      
   avgSum += ADC1->DR ;}
 
- averaged = avgSum/SAMPLE;
-   
+ arithAveraged = avgSum/SAMPLE;
+
+ exponentialAveraged = (1 -alpha) * arithAveraged + alpha * lastExpAveraged;
+
+ lastExpAveraged = exponentialAveraged; 
     
- R = (100000 / ((4096/averaged)-1));
+ R = (100000 / ((4096/exponentialAveraged)-1));
 
 
     
