@@ -28,7 +28,7 @@ double rem;
 
 double Input;
 double Output;
-double Setpoint=50;
+double Setpoint=45;
 double errorSum;
 double lastErr=0;
 double ITerm=0;
@@ -36,7 +36,7 @@ double DTerm=0;
 double outMin=0;
 double outMax=1000;
 double kp=2.55;
-double ki=0.00010;
+double ki=0.00013;
 double kd=2.3;
 
 
@@ -72,8 +72,9 @@ double error = Setpoint - Input;
 
 //ITerm += (ki * error);
 
-if(Input<Setpoint){ki=0.0002;}
-if(Input>Setpoint+0.6){ki=0.0020;}
+
+if(Input>Setpoint+0.40){ki=0.0025;}
+else {ki=0.00025;}
 
 if((error>-3)&&(error<3))
 {
@@ -192,7 +193,7 @@ int main(void) {
     sprintf(buffer,"%d.%ld \r\n",(int)rem, (uint32_t)((rem - (int)rem) *1000000.0));
 
     sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
-    USART_SendString(USART1,buffer2);
+   // USART_SendString(USART1,buffer2);
     USART_SendString(USART1,buffer);
     
     //USART_SendString(USART1,buffer);
@@ -230,14 +231,14 @@ TouchScreenErrorCodes adc_init(void)
      /*GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);*/
-	RCC_ADCCLKConfig (RCC_PCLK2_Div6);
+	RCC_ADCCLKConfig (RCC_PCLK2_Div2);
 	
 	ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
 	ADC_InitStructure.ADC_ScanConvMode = DISABLE;
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;	// we work in continuous sampling mode
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-	ADC_InitStructure.ADC_NbrOfChannel = 2;
+	ADC_InitStructure.ADC_NbrOfChannel = 1;
 	//ADC_RegularChannelConfig(ADC1,ADC_Channel_1, 1,ADC_SampleTime_1Cycles5);// define regular conversion config
 	//ADC_RegularChannelConfig(ADC1,ADC_Channel_2, 1,ADC_SampleTime_1Cycles5);// define regular conversion config
 	 // define regular conversion config
@@ -288,7 +289,7 @@ double getTemp(double alpha)
  int avgSum = 0;
  volatile double R;
  volatile double celcius ;
- int SAMPLE = 70;
+ int SAMPLE = 100;
  double lastExpAveraged=0;
  double exponentialAveraged=0;
 
