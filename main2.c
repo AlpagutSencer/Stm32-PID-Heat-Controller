@@ -28,16 +28,16 @@ double rem;
 
 double Input;
 double Output;
-double Setpoint=45;
+double Setpoint=80;
 double errorSum;
 double lastErr=0;
 double ITerm=0;
 double DTerm=0;
 double outMin=0;
 double outMax=1000;
-double kp=2.55;
-double ki=0.00013;
-double kd=2.3;
+double kp=2.80;
+double ki=0.00015;
+double kd=3;
 
 
 
@@ -73,8 +73,11 @@ double error = Setpoint - Input;
 //ITerm += (ki * error);
 
 
-if(Input>Setpoint+0.40){ki=0.0025;}
-else {ki=0.00025;}
+
+if(Input>Setpoint+0.05){ITerm=0;}
+
+/*if(Input>Setpoint+0.05){ki=0.0030;}
+else {ki=0.00015;}*/
 
 if((error>-3)&&(error<3))
 {
@@ -193,8 +196,9 @@ int main(void) {
     sprintf(buffer,"%d.%ld \r\n",(int)rem, (uint32_t)((rem - (int)rem) *1000000.0));
 
     sprintf(buffer2,"%d.%ld \r\n",(int)ITerm, (uint32_t)((ITerm - (int)ITerm) *1000000.0));
-   // USART_SendString(USART1,buffer2);
+    USART_SendString(USART1,buffer2);
     USART_SendString(USART1,buffer);
+    _delay_ms(1000);
     
     //USART_SendString(USART1,buffer);
     /*setpos(0,0);
